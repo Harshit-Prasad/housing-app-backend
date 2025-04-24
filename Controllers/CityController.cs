@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using server.Data;
+using server.DTOs;
+using server.Interfaces;
 using server.Models;
-using server.Repository;
 
 namespace server.Controllers
 {
@@ -11,29 +11,39 @@ namespace server.Controllers
     [ApiController]
     public class CityController : ControllerBase
     {
-        private readonly DataContext _dataContext;
-        private readonly ICityRepository _cityRepository;
+
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+
         public CityController(
-            DataContext datacontext,
-            ICityRepository cityRepository
+            IUnitOfWork unitOfWork,
+            IMapper mapper
             ) 
         {
-            this._dataContext = datacontext;
-            this._cityRepository = cityRepository;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetCitites()
         {
-            var cities = await _cityRepository.GetCitiesAsync();
-            return Ok(cities);
+            var cities = await _unitOfWork.CityRepository.GetCitiesAsync();
+
+            var citiesDto = _mapper.Map<IEnumerable<CityDTO>>( cities );
+
+            return Ok(citiesDto);
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddCity(City city)
+        public async Task<IActionResult> AddCity(CityDTO cityDto)
         {
-            _cityRepository.AddCity(city);
-            await _cityRepository.SaveAsync();
+            var city = _mapper.Map<City>(cityDto);
+
+            city.LastUpdatedBy = 1;
+            city.LastUpdatedOn = DateTime.Now;
+            
+            _unitOfWork.CityRepository.AddCity(city);
+            await _unitOfWork.SaveAsync();
 
             return StatusCode(201);
         }
@@ -41,8 +51,8 @@ namespace server.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCity(int id)
         {
-            _cityRepository.DeleteCity(id);
-            await _cityRepository.SaveAsync();
+            _unitOfWork.CityRepository.DeleteCity(id);
+            await _unitOfWork.SaveAsync();
             return Ok(id);
         }
 

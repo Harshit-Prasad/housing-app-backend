@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using server.Data;
+using server.Interfaces;
 using server.Models;
 
 namespace server.Repository
@@ -30,9 +31,5 @@ namespace server.Repository
             return await _dataContext.Cities.ToListAsync();
         }
 
-        public async Task<bool> SaveAsync()
-        {
-            return await _dataContext.SaveChangesAsync() > 0;
-        }
     }
 }
